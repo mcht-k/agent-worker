@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python -c \"import yaml; print\\('yaml OK'\\)\")",
+      "Bash(python:*)",
+      "Bash(xargs -I{} echo \"Files: {}\")",
+      "Bash(xargs cat:*)",
+      "Bash(xargs -I{} echo \"Lines \\(source\\): {}\")",
+      "Bash(pip install:*)",
+      "Bash(agent-runner:*)",
+      "Bash(pip show:*)",
+      "Read(//c/Dev/vouchify-monorepo/**)",
+      "Bash(agent-runner status:*)",
+      "Bash(graphify --version)",
+      "Bash(graphify --help)",
+      "Bash(graphify hook:*)",
+      "Bash(where python:*)",
+      "Bash(where python3:*)",
+      "Bash(where py:*)",
+      "Bash(py --version)"
+    ]
+  }
+}

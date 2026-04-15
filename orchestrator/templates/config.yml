@@ -1,0 +1,114 @@
+# Agent Runner — configuration
+# Place this file at: <repo>/.agent/config.yml
+
+runner:
+  max_parallel: 1                    # max concurrent tasks (>1 requires use_worktrees)
+  poll_interval_seconds: 30          # daemon sleep between cycles
+  task_timeout_seconds: 3600         # kill agent after this many seconds
+  max_attempts: 5                    # max retries per task before marking failed
+  limit_retry_wait_seconds: 1800     # wait after rate limit hit (30 min)
+  store_artifacts: true              # keep logs, transcripts, results
+
+git:
+  default_base_branch: develop       # branch to fork work branches from (each task builds on previous)
+  default_target_branch: develop     # branch to merge completed work into
+  merge_mode: direct                 # direct | pr | rebase
+  on_conflict: review_required       # review_required | retry_rebase | pause
+  delete_work_branch_after_merge: false
+  use_worktrees: false               # enable for parallel execution
+  auto_push: true                    # push after merge
+  post_merge_validation: ""          # shell command to run after merge (e.g. "dotnet build")
+
+agents:
+  default: claude                    # default agent for new tasks
+  allowed:
+    - claude
+    - gemini
+    - codex
+    - aider
+  models:
+    high: claude-opus-4-6            # complex architecture, security reviews
+    medium: claude-sonnet-4-6        # typical features, bug fixes, tests
+    low: claude-haiku-4-5            # docs, formatting, config changes
+  agent_models:                      # optional: override tier mapping per agent/provider
+    codex:
+      high: gpt-5.4
+      medium: gpt-5.4-mini
+      low: gpt-5.4-mini
+    gemini:
+      high: gemini-2.5-pro
+      medium: gemini-2.5-flash
+      low: gemini-2.5-flash-lite
+  default_model_tier: medium
+  auto_rules:                        # auto-assign model tier by task ID pattern
+    - pattern: "*-doc*|*-readme*|write-doc*|update-readme*|update-config*|update-queue*"
+      model: low
+    - pattern: "*-security*|*-architecture*|*-stripe*"
+      model: high
+    # everything else → default_model_tier (medium)
+  rotation:
+    enabled: false                   # enable to auto-switch agents on rate limit
+    strategy: on_limit               # switch agent when current one hits limit
+    order:                           # rotation priority (first available wins)
+      - claude                       # primary: full autonomous agent
+      - gemini                       # fallback 1: Google, different limits
+      - codex                        # fallback 2: OpenAI, different limits
+      - aider                        # fallback 3: code editor, any model backend
+
+notifications:
+  ntfy_enabled: false                # set to true and fill ntfy_url to enable push notifications
+  ntfy_url: ""                       # e.g. https://ntfy.sh/my-agent-topic
+  ntfy_topic: ""                     # alternative: just the topic name
+  events:
+    - task_started
+    - task_completed
+    - task_failed
+    - limit_hit
+    - queue_empty
+    - review_required               # fires when merge fails or validation fails — important!
+
+# Optional post-execution validation commands
+# validation:
+#   - name: build
+#     command: "dotnet build --no-restore"
+#     required: true
+#   - name: tests
+#     command: "dotnet test --no-build"
+#     required: false
+
+# Lifecycle hooks — run at specific phases of task execution
+# Built-in hooks: graphify (pre_task), update_claude_md (post_merge), sync_agent_docs (post_merge)
+# Custom hooks: any shell command with access to env vars:
+#   AGENT_TASK_ID, AGENT_PHASE, AGENT_WORK_BRANCH, AGENT_TARGET_BRANCH, AGENT_ERROR
+hooks:
+  # pre_task: before agent runs — build context, prepare environment
+  pre_task: []
+    # - name: graphify                  # generate knowledge graph context for the agent
+    #   enabled: true
+    #   timeout: 300
+    #   required: false                 # if false, hook failure doesn't block the task
+    #   # command: "graphify"           # optional: explicit path when graphify is not in PATH
+    #   #   e.g. Windows venv: "C:/Users/you/AppData/Local/Programs/Python/Python312/Scripts/graphify.exe"
+    #   #   or Linux venv:     "/home/you/.venv/bin/graphify"
+
+  # post_task: after agent succeeds, before merge — lint, format, validate
+  post_task: []
+    # - name: lint
+    #   command: "npm run lint --fix"
+    #   required: false
+
+  # post_merge: after successful merge — rebuild, update docs, sync knowledge
+  post_merge: []
+    # - name: update_claude_md          # auto-update PROJECT.md when code changes
+    #   enabled: true
+    #   timeout: 300
+    #   required: false
+    # - name: sync_agent_docs           # sync PROJECT.md → CLAUDE.md, AGENTS.md, GEMINI.md
+    #   enabled: true
+    #   required: false
+    # - name: rebuild
+    #   command: "docker compose -f docker-compose.dev.yml up -d --build api"
+    #   required: false
+
+  # on_failure: when a task fails — cleanup, extra notifications
+  on_failure: []

@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "agent-runner"
+version = "1.0.0"
+description = "Universal AI task orchestrator — manage queues of tasks across Claude, Gemini, Codex, and Aider"
+readme = "README.md"
+requires-python = ">=3.8"
+license = "MIT"
+dependencies = [
+    "pyyaml>=5.0",
+]
+
+[project.scripts]
+agent-runner = "runner.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["runner*"]
+
+[tool.setuptools.package-data]
+runner = ["templates/*", "templates/.*"]
