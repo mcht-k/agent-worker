@@ -1,4 +1,0 @@
-task=.agent/tasks/write-documentation.md
-timestamp=2026-04-12 16:49:53
-all_checkboxes_checked=true
-exit_status=success
