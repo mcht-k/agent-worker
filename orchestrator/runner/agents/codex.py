@@ -26,12 +26,13 @@ class CodexAgent(BaseAgent):
     ) -> AgentRunResult:
         task_content = self._build_input(task_file, context_file)
 
-        cmd = ["codex", "--approval-mode", "full-auto"]
+        # Use non-interactive mode and read the prompt from stdin ("-").
+        # This avoids Windows command-line length limits for large task payloads.
+        cmd = ["codex", "exec", "--full-auto", "-"]
         if model:
             cmd.extend(["--model", model])
-        cmd.append(task_content)
 
-        log.info("Running codex: %s (cwd=%s)", " ".join(cmd[:4]), working_dir)
+        log.info("Running codex: %s (cwd=%s)", " ".join(cmd), working_dir)
 
         try:
             stdout, stderr, returncode = self._run_subprocess(

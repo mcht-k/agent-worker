@@ -1,6 +1,7 @@
 """Abstract base for agent adapters."""
 
 import logging
+import errno
 import shutil
 import subprocess
 import sys
@@ -185,6 +186,10 @@ class BaseAgent(ABC):
                 proc.stdin.close()
             except BrokenPipeError:
                 pass
+            except OSError as e:
+                # On Windows, process can exit before stdin close; treat as pipe-closed.
+                if e.errno != errno.EINVAL:
+                    raise
 
             try:
                 proc.wait(timeout=timeout)
